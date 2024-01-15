@@ -1,0 +1,300 @@
+Student table
+Create TABLE STUDENT(
+sid INT PRIMARY KEY,
+sname VARCHAR(255),
+sex CHAR(1),
+age INT,
+year INT,
+gpa NUMERIC
+); 
+
+-- Student table description
+
+-- sid: This field has been chosen as our primary key in the student table and it uniquely displays each student ID number. It is an Integer data type. 
+-- sname: Stores the name of each student. The data type is VARCHAR(255) - which means that it can store 255 characters. 
+-- sex: Displays each student’s gender. The datatype used is CHAR(1) which allows for a single character relating to gender (‘F’ for Female, ‘M’ for Male).
+-- age: Student age is stored, and the datatype used is type Integer (INT). 
+-- year: The academic year is represented in this field. Datatype: INT.
+-- gpa: The Grade Point Average (GPA)is displayed in this column. The data type chosen was NUMERIC as values contain decimals.
+
+Dept table
+CREATE TABLE dept(
+dname VARCHAR(255) PRIMARY KEY,
+numphds INT);
+
+-- Dept table description 
+-- dame: This field is the primary key of the dept table and identifies each department. The Data type used was VARCHAR (255). 
+-- numphds: The number of PHD students from each department is stored in this field. Integer is the chosen datatype. 
+-- The primary key in field is dname. It can be used as a foreign key in other tables such as course and prof. The use of this primary key ensures that the names of each department are unique for each record of the dept table.
+
+Prof table
+CREATE TABLE prof(
+pname VARCHAR(255) PRIMARY KEY,
+dname VARCHAR(255) REFERENCES dept (dname));
+
+-- prof table description 
+-- pname: Displays the name of college professors. Data Type: VARCHAR(255)
+-- dname: This field indicates the department where each professor works and is a foreign key referencing the dept table. The ‘REFERENCES dept (dname)’ constraint means that dname column values in the prof table must also exist in the dname column in dept table. 
+-- PRIMANY KEY (pname,dname); these two fields form the primary keys of the prof table. This ensures that the name of each professor is unique within each department. It also ensures that there are no duplicate entries for professors in the same departments. The use of foreign keys enforces a relationship between the prof and dept tables.
+
+Course table
+CREATE TABLE course (
+cno INT PRIMARY KEY,
+cname VARCHAR(255),
+dname VARCHAR(255) REFERENCES dept(dname)
+); 
+
+
+-- Course table description 
+-- cno: The course number (cno) was chosen as the primary key for this field meaning each course has its own unique identifier. Integer was used as the data type. 
+-- cname: Course names were represented in this column. The data type VARCHAR (255) was selected. 
+-- dname: This field indicates the name of each university department. It is a foreign key and the line ‘REFERENCES dept (dname)’ ensures that values in the dname column in course also exist in the dname column in dept.
+
+
+
+Major table
+CREATE TABLE major (
+Dname VARCHAR(255) REFERENCES dept(dname),
+Sid INT,
+PRIMARY KEY (dname, sid)
+);
+-- Major table description
+-- dname: Department names are represented in this column. It is a foreign key which references the dname column from the dept table. Data type: VARCHAR (255)
+-- cno: The column displays the course number. It is a foreign key which references the cno column from the course table. Through this foreign key, a relationship is established between the section and course tables. 
+-- sectno: Represents the section number and forms the composite primary key for the section table along with dname and cno. This ensures that section is identified uniquely within a department and course. 
+-- pname: The professors name is represented in this column. It is a foreign key which references the pname column in the prof table. VARCHAR(255) was selected as the data type for this field. 
+-- Primary Key (dname, cno, sectno): Ensures that each combination of these fields is unique.
+
+
+Section table
+CREATE TABLE section(
+dname VARCHAR(255),
+cno INT,
+sectno INT,
+pname VARCHAR(255) REFERENCES prof(pname),
+PRIMARY KEY (dname,cno,sectno)
+); 
+
+-- Section table description 
+-- dname: Displays university departments. It is a foreign key which references the dname column in the dept table. Datatype: VARCHAR(255). 
+-- cno: Represents course number. It is a foreign key which references the cno column from the course table. Datatype: INT. 
+-- sectno: The section number is represented in this column. It is one of three composite primary keys (along with dname and cno). 
+-- Datatype: INT. pname: Represents the names of professors. Pname is a foreign key and references the pname column from prof table. Datatype: VARCHAR(255). 
+-- PRIMARY KEY (dname, cno, sectno): This constraint ensures each combination of the three Primary Keys is unique.
+
+Enroll table
+CREATE TABLE enroll (
+sid INT,
+grade NUMERIC,
+dname VARCHAR(255) REFERENCES dept(dname),
+cno INT,
+sectno INT,
+PRIMARY KEY (sid, dname, cno, sectno),
+FOREIGN KEY (dname, cno, sectno) REFERENCES section(dname,cno,sectno)
+);
+
+-- Enroll table description 
+-- sid: Student IDs are represented in this column. It references the sid column in the student table. Datatype: INT grade: Displays student grades. Datatype: Numeric. 
+-- dname: Department names are represented in this column and the field references the dname column from the dept table. Datatype: Varchar. 
+-- cno: Displays course number. Cno references the cno column in the section table. Datatype: INT. 
+-- sectno: Displays section number. Sectno, dname and cno are the composite foreign keys referencing the section table. Datatype: INT primary Keys: (sid, dname, cno and sectno).
+
+
+1. Print the names of professors who work in departments that have fewer than 50 PhD students
+
+
+--Query 1
+
+
+SELECT
+prof.pname
+FROM prof
+JOIN dept ON prof.dname =dept.dname
+Where
+dept.numphds < 50;
+
+
+2. Print the names of the students with the lowest GPA
+
+
+--Query 2
+
+
+SELECT sname 
+FROM student
+ORDER BY gpa asc
+LIMIT 5;
+
+
+-- 3. For each Computer Sciences class, print the class number, section number, and the average gpa of the students enrolled in the class section
+
+
+--Query 3
+
+
+SELECT c.cno AS class_number,
+s.sectno AS section_number,
+Round(AVG(st.gpa),2)AS average_gpa
+FROM course c
+JOIN section s ON c.dname = s.dname AND c.cno = s.cno
+JOIN enroll e ON s.dname = e.dname AND s.cno =e.cno AND s.sectno =e. sectno
+JOIN student st ON e.sid = st.sid WHERE c.dname = 'Computer Sciences'
+GROUP BY c.cno, s.sectno;
+
+
+-- 4. Print the names and section numbers of all sections with more than six students enrolled in them
+
+
+--Query 4
+
+SELECT sec.dname AS department_name, sec.sectno AS section_number
+FROM section sec
+JOIN enroll e ON sec.dname = e.dname AND sec.cno = e.cno AND sec.sectno = e.sectno
+GROUP BY sec.dname, sec.cno, sec.sectno
+HAVING COUNT (DISTINCT e.sid) > 6;
+
+
+-- 5. List the department names and the number of classes offered in each department
+
+
+--Query 5
+
+SELECT
+d.dname AS department_name,
+COUNT (c.cno) AS number_classes_offered
+FROM
+dept d
+LEFT JOIN
+course c ON d.dname = c.dname
+GROUP BY
+d.dname;
+
+
+-- 6. Print the names of departments that have one or more majors who are under 18 years old#
+
+--Query 6
+
+SELECT DISTINCT 
+d.dname AS department_name
+FROM
+dept d
+JOIN
+major m ON d.dname =m.dname
+JOIN
+STUDENT s ON m.sid =s.sid
+WHERE 
+s.age < 18;
+
+
+-- 7. Print the names and majors of students who are taking one of the College Geometry courses
+
+
+--Query 7
+
+
+SELECT s.sname, m.dname
+FROM student s
+JOIN major m ON s.sid =m.sid
+JOIN enroll e ON s.sid =e.sid
+JOIN section sec ON e.dname = sec.dname AND e.cno =sec.cno AND e.sectno = sec.sectno
+JOIN course c ON sec.cno =c.cno AND sec.dname =c.dname
+WHERE c.cname
+LIKE '%College Geometry%'
+
+
+-- 8. For those departments that have no major taking a College Geometry course print the department name and the number of PhD students in the department
+
+--Query 8
+
+Select Distinct d.dname AS department_name, numphds as number_of_phds
+from dept d
+WHERE NOT EXISTS (
+Select 1
+FROM major m
+JOIN enroll e ON m.sid = e.sid
+JOIN SECTION sec ON e.dname = sec.dname AND e.cno = sec.cno AND e.sectno = sec.sectno
+JOIN course c ON sec.cno = c.cno AND sec.dname =c.dname
+WHERE d.dname = m.dname
+AND c.cname LIKE '%College Geometry%');
+
+
+-- 9. Print the names of students who are taking either a Computer Sciences course or a Mathematics course
+
+
+--Query 9
+
+
+SELECT DISTINCT 
+s.sname AS student_name
+FROM 
+student s
+JOIN 
+enroll e ON s.sid = e.sid
+JOIN 
+section sec ON e.dname = sec.dname AND e.cno =sec.cno AND e.sectno = sec.sectno
+JOIN 
+course c ON sec.dname =c.dname AND sec.cno =c.cno
+WHERE
+c.dname IN ('Computer Sciences','Mathematics' );
+
+
+-- 10. Print the age difference between the oldest and the youngest Computer Sciences major
+
+-- Query 10
+
+SELECT
+MAX(s.age) - Min(s.age) AS age_difference
+FROM 
+student s
+JOIN
+major m ON s.sid =m.sid
+JOIN 
+dept d ON m.dname = d.dname
+WHERE
+d.dname = 'Computer Sciences';
+
+-- 11. For each department that has one or more majors with a GPA under 1.0, print the name of the department and the average GPA of its majors
+
+--Query 11
+
+SELECT
+d.dname AS department_name,
+ROUND (AVG(s.gpa),2) AS average_gpa
+FROM
+dept d
+JOIN
+major m ON d.dname = m.dname
+JOIN 
+student s ON m.sid =s.sid
+WHERE s.gpa >= 1.0 AND d.dname IN (
+SELECT DISTINCT
+dname
+FROM
+major m
+JOIN student s ON m.sid =s.sid
+WHERE 
+s.gpa < 1.0
+)
+GROUP BY d.dname;
+
+-- 12. Print the ids, names and GPAs of the students who are currently taking all the Civil Engineering courses
+
+--Query 12
+
+SELECT
+s.sid AS student_id,
+s.sname AS student_name,
+s.gpa
+FROM
+student s
+LEFT JOIN
+enroll e ON s.sid = e.sid
+LEFT JOIN
+course c ON e.dname = c.dname AND e.cno = c.cno
+WHERE
+c.dname = 'Civil Engineering' AND
+c.cno IS NOT null
+GROUP BY 
+s.sid, s.sname, s.gpa
+HAVING
+COUNT (c.cno) = (SELECT COUNT(*)FROM course WHERE dname = 'Civil Engineering');
